@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaxAudioEditor — Local AI DAW</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/effects.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- 1. Header Bar -->
+    <header id="app-header">
+      <div class="header-brand">
+        <span class="brand-badge">MAX AUDIO</span>
+        <span class="brand-version">v0.1.0 [LOCAL-AI]</span>
+      </div>
+
+      <div class="header-controls">
+        <button id="btn-new-project" class="btn">New Project</button>
+        <button id="btn-open-project" class="btn">Open...</button>
+        <button id="btn-save-project" class="btn btn-primary">Save Project</button>
+        <button id="btn-stem-separation" class="btn" style="border-color: var(--accent-cyan); color: var(--accent-cyan);" title="AI Stem Separation on Local GPU">🎛 Stem Separation</button>
+        <button id="btn-import-audio" class="btn btn-accent">+ Import Audio</button>
+      </div>
+    </header>
+
+    <!-- 2. Transport Bar -->
+    <section id="app-transport">
+      <div class="transport-group">
+        <button id="btn-rewind" class="btn btn-transport" title="Rewind to start (Home)">⏮</button>
+        <button id="btn-play" class="btn btn-transport play" title="Play / Pause (Space)">▶</button>
+        <button id="btn-stop" class="btn btn-transport" title="Stop">⏹</button>
+        <button id="btn-loop" class="btn btn-transport" title="Toggle Loop (L)">🔁</button>
+      </div>
+
+      <div class="transport-group">
+        <div id="display-timecode" class="timecode-display">00:00:00.000</div>
+        <div id="display-bars" class="timecode-display" style="color: var(--accent-amber); min-width: 110px;">1.1.00</div>
+      </div>
+
+      <div class="transport-group">
+        <div class="slider-container">
+          <label style="font-size: var(--font-size-xs); color: var(--text-secondary);">TEMPO</label>
+          <input type="number" id="input-tempo" min="30" max="300" value="120.0" step="0.1" style="width: 65px; padding: 4px; text-align: center; font-family: var(--font-mono); border-radius: 4px;">
+          <span style="font-size: var(--font-size-xs); color: var(--text-muted);">BPM</span>
+        </div>
+
+        <div class="slider-container">
+          <label style="font-size: var(--font-size-xs); color: var(--text-secondary);">SNAP</label>
+          <select id="select-snap" style="padding: 4px 8px; border-radius: 4px;">
+            <option value="bar">1 Bar</option>
+            <option value="1/2">1/2 Beat</option>
+            <option value="1/4" selected>1/4 Beat</option>
+            <option value="1/8">1/8 Beat</option>
+            <option value="1/16">1/16 Beat</option>
+            <option value="free">Free (Off)</option>
+          </select>
+        </div>
+
+        <div class="transport-group" style="gap: 4px;">
+          <button id="btn-undo" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+          <button id="btn-redo" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
+          <button id="btn-split" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Split selected clip at playhead (S)">✂ Split</button>
+          <button id="btn-duplicate" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Duplicate selected clip (Ctrl+D)">⧉ Dup</button>
+          <button id="btn-delete" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" title="Delete selected clip (Del)">🗑 Del</button>
+        </div>
+
+        <div class="transport-group" style="gap: 4px;">
+          <button id="btn-zoom-out" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Zoom Out (Ctrl+Minus)">🔍 -</button>
+          <button id="btn-zoom-in" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Zoom In (Ctrl+Plus)">🔍 +</button>
+        </div>
+
+        <div class="slider-container" style="margin-left: 8px; border-left: 1px solid var(--border-subtle); padding-left: 8px;">
+          <label style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600;">MASTER</label>
+          <input type="range" id="slider-master-volume" min="-30" max="6" value="0" step="0.5" style="width: 80px;" title="Master Volume (-30dB to +6dB)">
+          <span id="label-master-volume" style="font-size: var(--font-size-xs); color: var(--accent-cyan); font-family: var(--font-mono); min-width: 45px;">0.0 dB</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Main Workspace Area -->
+    <main id="main-workspace">
+      <div id="timeline-container">
+        <!-- Ruler Corner with Add Track Button -->
+        <div id="timeline-ruler-corner" style="display: flex; align-items: center; justify-content: center;">
+          <button id="btn-add-track" class="btn btn-primary" style="width: 100%; height: 100%; border-radius: 0; font-size: 11px; padding: 2px;">+ Add Track</button>
+        </div>
+        <!-- Time Ruler Canvas -->
+        <div id="timeline-ruler">
+          <canvas id="ruler-canvas" style="width: 100%; height: 100%;"></canvas>
+        </div>
+        <!-- Track Headers -->
+        <div id="track-headers-container">
+          <div id="track-headers-list" style="padding: 8px;">
+            <div style="padding: 12px; color: var(--text-muted); font-size: var(--font-size-xs); text-align: center;">
+              No tracks loaded. Click <b>+ Import Audio</b> or drop audio files anywhere.
+            </div>
+          </div>
+        </div>
+        <!-- Timeline Tracks Viewport -->
+        <div id="timeline-viewport">
+          <canvas id="timeline-canvas" style="display: block; width: 100%; height: 100%;"></canvas>
+        </div>
+      </div>
+
+      <!-- Resizable Splitter Handle between Timeline and Bottom Panel -->
+      <div id="drawer-resizer" class="drawer-resizer" title="Drag to resize bottom panel, double-click to collapse/expand"></div>
+
+      <!-- Bottom Tabbed Drawer -->
+      <div id="bottom-drawer">
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" data-target="panel-mixer">🎛 Mixer</button>
+          <button class="drawer-tab" data-target="panel-inspector">🔍 Inspector</button>
+          <button class="drawer-tab" data-target="panel-history">📜 History</button>
+          <button class="drawer-tab" data-target="panel-effects">⚡ Effects Rack</button>
+          <button class="drawer-tab" data-target="panel-ai">🤖 AI Assistant</button>
+          <button class="drawer-tab" data-target="panel-analysis">📊 Music Analysis</button>
+          <button class="drawer-tab" data-target="panel-jobs">⏳ Active Jobs</button>
+          <button class="drawer-tab" data-target="panel-export">💾 Master Export</button>
+
+          <!-- Quick Resize / Collapse Controls -->
+          <div class="drawer-tabs-right">
+            <button id="btn-drawer-collapse" class="drawer-action-btn" title="Collapse bottom panel (Ctrl+B)">▼</button>
+            <button id="btn-drawer-expand" class="drawer-action-btn" title="Maximize / Restore bottom panel">▲</button>
+          </div>
+        </div>
+
+        <div id="drawer-content" class="drawer-content">
+          <!-- Mixer Tab -->
+          <div id="panel-mixer" class="tab-panel active">
+            <div style="display: flex; gap: 16px; align-items: flex-end; height: 100%;">
+              <div style="color: var(--text-muted); font-size: var(--font-size-sm); margin: auto;">
+                Mixer channels will populate when tracks are loaded.
+              </div>
+            </div>
+          </div>
+
+          <!-- Inspector Tab -->
+          <div id="panel-inspector" class="tab-panel" style="display: none;"></div>
+
+          <!-- History Tab -->
+          <div id="panel-history" class="tab-panel" style="display: none;"></div>
+
+          <!-- Effects Tab -->
+          <div id="panel-effects" class="tab-panel" style="display: none;">
+            <div style="color: var(--text-muted); font-size: var(--font-size-sm); text-align: center; padding: 20px;">
+              Select a track to configure its 4-band Parametric EQ, Compressor, Limiter, and Reverb.
+            </div>
+          </div>
+
+          <!-- AI Assistant Tab -->
+          <div id="panel-ai" class="tab-panel" style="display: none;">
+            <div style="display: flex; flex-direction: column; height: 100%; max-width: 800px; margin: 0 auto; gap: 10px;">
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px; flex: 1; overflow-y: auto;">
+                <div style="color: var(--accent-cyan); font-weight: 600; margin-bottom: 4px;">MaxAudio Local AI Assistant</div>
+                <div style="color: var(--text-secondary); font-size: var(--font-size-xs);">
+                  Ask natural language commands (e.g. <i>"Separate stems from imported song"</i>, <i>"Lower drums by 3dB in Chorus"</i>, <i>"Apply vocal compression"</i>).
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="ai-prompt-input" placeholder="Type a DAW editing command..." style="flex: 1; padding: 8px 12px; border-radius: 4px;">
+                <button id="ai-submit-btn" class="btn btn-accent">Execute</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analysis Tab -->
+          <div id="panel-analysis" class="tab-panel" style="display: none;">
+            <div id="analysis-summary" style="display: flex; gap: 20px; color: var(--text-secondary);">
+              <div>BPM: <b id="analysis-bpm" style="color: var(--accent-amber);">--</b></div>
+              <div>Key: <b id="analysis-key" style="color: var(--accent-cyan);">--</b></div>
+              <div>Loudness: <b id="analysis-lufs" style="color: var(--text-primary);">-- LUFS</b></div>
+              <div>Sections: <b id="analysis-sections" style="color: var(--accent-green);">0 detected</b></div>
+            </div>
+          </div>
+
+          <!-- Jobs Tab -->
+          <div id="panel-jobs" class="tab-panel" style="display: none;">
+            <div id="jobs-list" style="color: var(--text-muted); font-size: var(--font-size-sm);">
+              No background tasks currently active.
+            </div>
+          </div>
+
+          <!-- Export Tab -->
+          <div id="panel-export" class="tab-panel" style="display: none;">
+            <div style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; gap: 16px; align-items: flex-end; background: var(--bg-secondary); padding: 16px; border-radius: 6px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+                <div>
+                  <label style="font-size: var(--font-size-xs); display: block; margin-bottom: 4px; color: var(--text-secondary);">BOUNCE MODE</label>
+                  <select id="export-mode" style="padding: 6px 12px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-subtle);">
+                    <option value="master">Master Stereo Mix</option>
+                    <option value="stems">Individual Track Stems (Sync Bounce)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: var(--font-size-xs); display: block; margin-bottom: 4px; color: var(--text-secondary);">FORMAT & RESOLUTION</label>
+                  <select id="export-format" style="padding: 6px 12px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-subtle);">
+                    <option value="wav24">WAV (24-bit studio master)</option>
+                    <option value="wav32">WAV (32-bit float broadcast)</option>
+                    <option value="wav16">WAV (16-bit CD quality)</option>
+                    <option value="flac">FLAC (Lossless 24-bit)</option>
+                    <option value="mp3">MP3 (320 kbps high bitrate)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: var(--font-size-xs); display: block; margin-bottom: 4px; color: var(--text-secondary);">SAMPLE RATE</label>
+                  <select id="export-sample-rate" style="padding: 6px 12px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-subtle);">
+                    <option value="44100">44,100 Hz</option>
+                    <option value="48000">48,000 Hz</option>
+                    <option value="96000">96,000 Hz</option>
+                  </select>
+                </div>
+                <button id="btn-start-export" class="btn btn-primary" style="padding: 8px 18px; font-weight: 600;">⚡ Render & Download</button>
+              </div>
+
+              <!-- Export Results & Progress Area -->
+              <div id="export-status-container" style="min-height: 48px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 4. Status Bar -->
+    <footer id="app-status">
+      <div class="status-left">
+        <span class="status-indicator"></span>
+        <span id="status-engine-text">Audio Engine Ready</span>
+        <span class="badge" id="status-sample-rate">44.1 kHz</span>
+      </div>
+
+      <div class="status-right">
+        <span class="badge badge-gpu" id="status-gpu-badge">GPU: Probing...</span>
+        <span class="badge badge-ai" id="status-ai-badge">AI: Phi-3 / Demucs Ready</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Hidden File Input for Audio Import -->
+  <input type="file" id="hidden-file-input" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a" style="display: none;">
+
+  <!-- Application Entrypoint -->
+  <script type="module" src="js/app.js?v=4"></script>
+</body>
+</html>

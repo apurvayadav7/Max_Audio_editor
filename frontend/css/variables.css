@@ -1,0 +1,56 @@
+/* MaxAudioEditor — Studio Design System Tokens */
+
+:root {
+  /* Color Palette - Studio Dark Theme */
+  --bg-primary: #0e1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-panel: #181d24;
+  --bg-track: #12151b;
+  --bg-clip: #232a35;
+  --bg-clip-hover: #2d3543;
+  --bg-clip-selected: #384254;
+
+  /* Accent & Status Colors */
+  --accent-cyan: #00f0ff;
+  --accent-cyan-dim: rgba(0, 240, 255, 0.15);
+  --accent-amber: #ffb800;
+  --accent-green: #00e676;
+  --accent-red: #ff3d71;
+  --accent-purple: #a855f7;
+
+  /* Track Default Colors */
+  --track-vocal: #00f0ff;
+  --track-drums: #ff3d71;
+  --track-bass: #ffb800;
+  --track-synth: #a855f7;
+  --track-other: #00e676;
+
+  /* Text & Border Colors */
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-muted: #57606a;
+  --border-subtle: #30363d;
+  --border-focus: #58a6ff;
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 15px;
+  --font-size-xl: 18px;
+
+  /* Dimensions */
+  --header-height: 48px;
+  --transport-height: 54px;
+  --status-bar-height: 28px;
+  --track-header-width: 220px;
+  --ruler-height: 28px;
+  --bottom-panel-height: 360px;
+
+  /* Transitions */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+}

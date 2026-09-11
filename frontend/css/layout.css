@@ -1,0 +1,262 @@
+/* MaxAudioEditor — Layout & DAW Grid Shell */
+
+#app-container {
+  display: grid;
+  grid-template-rows: var(--header-height) var(--transport-height) 1fr var(--status-bar-height);
+  grid-template-columns: 1fr;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 1. Header Bar */
+#app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  z-index: 10;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-badge {
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--accent-cyan), #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-version {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 2. Transport Bar */
+#app-transport {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  z-index: 9;
+}
+
+.transport-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timecode-display {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: #080a0e;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  letter-spacing: 2px;
+  min-width: 160px;
+  text-align: center;
+}
+
+/* 3. Main Workspace Area (Timeline + Resizer + Bottom Panels) */
+#main-workspace {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  overflow: hidden;
+  position: relative;
+}
+
+#timeline-container {
+  display: grid;
+  grid-template-columns: var(--track-header-width) 1fr;
+  grid-template-rows: var(--ruler-height) 1fr;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bg-primary);
+  min-height: 80px;
+}
+
+#timeline-ruler-corner {
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+#timeline-ruler {
+  overflow: hidden;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+#track-headers-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-subtle);
+}
+
+#timeline-viewport {
+  overflow: auto;
+  position: relative;
+  background-color: var(--bg-track);
+}
+
+/* Draggable Splitter Handle between Timeline and Bottom Panel */
+.drawer-resizer {
+  height: 7px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: row-resize;
+  position: relative;
+  z-index: 20;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+}
+
+.drawer-resizer::after {
+  content: "";
+  width: 48px;
+  height: 3px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  transition: background var(--transition-fast), width var(--transition-fast);
+}
+
+.drawer-resizer:hover,
+.drawer-resizer.dragging {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-cyan);
+}
+
+.drawer-resizer:hover::after,
+.drawer-resizer.dragging::after {
+  background: var(--accent-cyan);
+  width: 72px;
+  box-shadow: 0 0 6px var(--accent-cyan);
+}
+
+/* Bottom Tabbed Drawer (Mixer / Effects / AI / Export) */
+#bottom-drawer {
+  height: var(--bottom-panel-height, 360px);
+  min-height: 32px;
+  max-height: calc(100vh - 140px);
+  background-color: var(--bg-panel);
+  display: grid;
+  grid-template-rows: 32px 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.drawer-tabs {
+  display: flex;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-tab {
+  padding: 6px 16px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.drawer-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.drawer-tab.active {
+  color: var(--accent-cyan);
+  background-color: var(--bg-panel);
+  border-bottom: 2px solid var(--accent-cyan);
+}
+
+.drawer-tabs-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+  gap: 4px;
+}
+
+.drawer-action-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  border-radius: 3px;
+  font-size: 11px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.drawer-action-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent-cyan);
+  border-color: var(--border-subtle);
+}
+
+.drawer-content {
+  overflow: auto;
+  padding: 12px;
+  min-height: 0;
+}
+
+/* 4. Status Bar */
+#app-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.status-left, .status-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green);
+}

@@ -1,0 +1,34 @@
+# Environment
+.venv/
+env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Storage & Runtime Data
+data/
+data/cache/
+data/temp/
+data/logs/
+data/models/
+data/projects/
+*.maxaudio/media/
+*.maxaudio/stems/
+*.maxaudio/cache/
+*.maxaudio/renders/
+*.db
+*.sqlite
+
+# Testing & Artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# OS Specific
+.DS_Store
+Thumbs.db
