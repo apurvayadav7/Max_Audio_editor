@@ -3,6 +3,7 @@
  */
 
 import { bus } from "../core/event-bus.js";
+import { api } from "../api/client.js";
 import { store } from "../state/store.js";
 import { commandManager } from "../commands/manager.js";
 import { audioEngine } from "../audio/engine.js";
@@ -162,6 +163,27 @@ export class ClipInspectorPanel {
             <input type="number" id="inspector-fadeout-input" min="0" max="${clip.duration.toFixed(2)}" step="0.05" value="${clip.fade_out || 0}" style="width: 100%; padding: 4px; border-radius: 4px;">
           </div>
         </div>
+
+        <!-- Audio-to-MIDI Transcription Section -->
+        <div style="background: var(--bg-secondary); padding: 12px; border-radius: 6px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px;">🎹</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">AUDIO-TO-MIDI TRANSCRIPTION</span>
+              <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; font-size: 9px; font-weight: 700;">TYPE 0 .MID</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button id="inspector-btn-transcribe" class="btn btn-primary" style="padding: 4px 12px; font-size: 11px; font-weight: 600; background: #a855f7; border: none; color: #fff;">⚡ Transcribe Notes</button>
+              <button id="inspector-btn-dl-midi" class="btn" style="padding: 4px 10px; font-size: 11px; display: none; background: #00e676; color: #000; font-weight: 700;">⬇ Download .MID</button>
+            </div>
+          </div>
+          <div id="inspector-midi-status" style="font-size: 10px; color: var(--text-muted);">
+            Extract polyphonic and melodic note events, onset times, and pitch contours to standard MIDI.
+          </div>
+          <div id="inspector-piano-roll-container" style="display: none; height: 64px; background: #0e1117; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-subtle); position: relative;">
+            <canvas id="inspector-piano-roll-canvas" width="860" height="64" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+        </div>
       </div>
     `;
 
@@ -246,6 +268,114 @@ export class ClipInspectorPanel {
         commandManager.execute(new DeleteClipCommand(track.id, clip.id));
       };
     }
+
+    // Transcribe to MIDI Button
+    const transcribeBtn = document.getElementById("inspector-btn-transcribe");
+    const dlMidiBtn = document.getElementById("inspector-btn-dl-midi");
+    const statusText = document.getElementById("inspector-midi-status");
+    const pianoRollContainer = document.getElementById("inspector-piano-roll-container");
+    const pianoRollCanvas = document.getElementById("inspector-piano-roll-canvas");
+
+    if (transcribeBtn) {
+      transcribeBtn.onclick = async () => {
+        const { project } = store.getState();
+        if (!project || !clip) return;
+
+        transcribeBtn.disabled = true;
+        transcribeBtn.textContent = "Transcribing Notes...";
+        if (statusText) statusText.textContent = "Extracting harmonic pitch events & onsets via DSP...";
+
+        try {
+          const res = await api.request(`/api/projects/${project.id}/transcribe`, {
+            method: "POST",
+            body: { clip_id: clip.id },
+          });
+
+          console.log("[Inspector] Transcribe result:", res);
+          if (statusText) {
+            statusText.innerHTML = `✅ <b>${res.notes_count} note events</b> extracted. Standard Type 0 MIDI generated.`;
+          }
+
+          if (dlMidiBtn && res.midi_download_url) {
+            dlMidiBtn.style.display = "inline-block";
+            dlMidiBtn.onclick = () => {
+              const a = document.createElement("a");
+              a.href = res.midi_download_url;
+              a.download = `${clip.name || "transcription"}.mid`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            };
+          }
+
+          if (pianoRollContainer && pianoRollCanvas && res.notes && res.notes.length > 0) {
+            pianoRollContainer.style.display = "block";
+            this.drawPianoRoll(pianoRollCanvas, res.notes, clip.duration);
+          }
+        } catch (err) {
+          console.error("[Inspector] Transcription failed:", err);
+          if (statusText) statusText.textContent = `❌ Transcription failed: ${err.message}`;
+        } finally {
+          transcribeBtn.disabled = false;
+          transcribeBtn.textContent = "⚡ Transcribe Notes";
+        }
+      };
+    }
+  }
+
+  drawPianoRoll(canvas, notes, totalDuration) {
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Background grid
+    ctx.fillStyle = "#0e1117";
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle horizontal pitch lines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.lineWidth = 1;
+    for (let y = 0; y < height; y += 12) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    if (!notes || notes.length === 0) return;
+
+    // Pitch range
+    const pitches = notes.map((n) => n.pitch);
+    const minP = Math.min(...pitches) - 1;
+    const maxP = Math.max(...pitches) + 1;
+    const pitchRange = Math.max(8, maxP - minP);
+
+    const dur = Math.max(0.1, totalDuration);
+
+    // Draw note rectangles
+    notes.forEach((note) => {
+      const x = (note.start_time / dur) * width;
+      const w = Math.max(3, (note.duration / dur) * width);
+      const normP = (note.pitch - minP) / pitchRange;
+      const y = (1.0 - normP) * (height - 10) + 2;
+      const h = Math.max(4, height / pitchRange - 1);
+
+      // Note body
+      const grad = ctx.createLinearGradient(x, y, x + w, y);
+      grad.addColorStop(0, "#a855f7");
+      grad.addColorStop(1, "#00f0ff");
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+
+      // Pitch label if note width is enough
+      if (w > 22 && h > 8) {
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "8px monospace";
+        ctx.fillText(note.note_name || "", x + 2, y + h - 1);
+      }
+    });
   }
 }
 

@@ -32,3 +32,6 @@ build/
 # OS Specific
 .DS_Store
 Thumbs.db
+
+# Scratch & Verification Scripts
+scratch/
