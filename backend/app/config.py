@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Server settings
     HOST: str = "127.0.0.1"
     PORT: int = 8000
-    CORS_ORIGINS: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
+    CORS_ORIGINS: list[str] = ["*"]
 
     # Audio limits
     DEFAULT_SAMPLE_RATE: int = 44100
