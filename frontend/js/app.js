@@ -20,6 +20,9 @@ import { stemModalUI } from "./panels/stems-modal.js";
 import { wsClient } from "./api/websocket-client.js";
 import { automationEngine } from "./timeline/automation.js";
 import { exportPanel } from "./panels/export.js";
+import { spectrogramRenderer } from "./canvas/spectrogram.js";
+import { spatialEngine } from "./audio/spatial.js";
+import { spatialPanel } from "./panels/spatial-panel.js";
 import {
   TrackMuteCommand,
   TrackSoloCommand,
@@ -45,6 +48,7 @@ class MaxAudioApp {
     musicAnalysisPanel.init();
     stemModalUI.init();
     exportPanel.init();
+    spatialPanel.init();
     automationEngine.init();
     wsClient.connect();
     this.bindUIEvents();
@@ -244,6 +248,64 @@ class MaxAudioApp {
     if (splitBtn) splitBtn.onclick = () => timelineController.splitSelectedClipAtPlayhead();
     if (dupBtn) dupBtn.onclick = () => timelineController.duplicateSelectedClip();
     if (delBtn) delBtn.onclick = () => timelineController.deleteSelectedClip();
+
+    // View Mode Buttons
+    const btnViewWave = document.getElementById("btn-view-waveform");
+    const btnViewSpec = document.getElementById("btn-view-spectrogram");
+    const btnViewSplit = document.getElementById("btn-view-split");
+    const selectPalette = document.getElementById("select-spectrogram-palette");
+    const btnTogglePitch = document.getElementById("btn-toggle-pitch");
+    const btnToggle8D = document.getElementById("btn-toggle-8d");
+
+    const setViewModeUI = (mode) => {
+      [btnViewWave, btnViewSpec, btnViewSplit].forEach((b) => b?.classList.remove("active"));
+      if (mode === "waveform" && btnViewWave) btnViewWave.classList.add("active");
+      if (mode === "spectrogram" && btnViewSpec) btnViewSpec.classList.add("active");
+      if (mode === "split" && btnViewSplit) btnViewSplit.classList.add("active");
+
+      if (selectPalette) {
+        selectPalette.style.display = mode === "waveform" ? "none" : "inline-block";
+      }
+      spectrogramRenderer.setViewMode(mode);
+    };
+
+    if (btnViewWave) btnViewWave.onclick = () => setViewModeUI("waveform");
+    if (btnViewSpec) btnViewSpec.onclick = () => setViewModeUI("spectrogram");
+    if (btnViewSplit) btnViewSplit.onclick = () => setViewModeUI("split");
+
+    if (selectPalette) {
+      selectPalette.onchange = (e) => {
+        spectrogramRenderer.setColormap(e.target.value);
+      };
+    }
+
+    if (btnTogglePitch) {
+      btnTogglePitch.onclick = () => {
+        const enabled = spectrogramRenderer.togglePitch();
+        if (enabled) {
+          btnTogglePitch.classList.add("active");
+          btnTogglePitch.style.borderColor = "var(--accent-magenta)";
+          btnTogglePitch.style.color = "var(--accent-magenta)";
+          btnTogglePitch.style.background = "rgba(255, 0, 128, 0.15)";
+        } else {
+          btnTogglePitch.classList.remove("active");
+          btnTogglePitch.style.borderColor = "";
+          btnTogglePitch.style.color = "";
+          btnTogglePitch.style.background = "";
+        }
+      };
+    }
+
+    if (btnToggle8D) {
+      btnToggle8D.onclick = () => {
+        spatialEngine.setEnabled(!spatialEngine.enabled);
+        // Switch to 8D Spatial tab in drawer
+        const spatialTab = document.querySelector('.drawer-tab[data-target="panel-spatial"]');
+        if (spatialTab && !spatialTab.classList.contains("active")) {
+          spatialTab.click();
+        }
+      };
+    }
 
     // Unlock Web Audio context on first user interaction
     const unlockAudio = () => {

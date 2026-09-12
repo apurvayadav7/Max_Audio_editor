@@ -21,6 +21,7 @@ import {
 } from "../commands/clip-commands.js";
 import { AddTrackCommand } from "../commands/track-commands.js";
 import { automationEngine } from "./automation.js";
+import { spectrogramRenderer } from "../canvas/spectrogram.js";
 
 export class TimelineController {
   constructor() {
@@ -72,8 +73,36 @@ export class TimelineController {
 
     bus.on("project:loaded", () => {
       this.preloadWaveforms();
+      if (spectrogramRenderer.viewMode !== "waveform") {
+        this.preloadSpectrograms();
+      }
+      if (spectrogramRenderer.showPitch) {
+        this.preloadPitchData();
+      }
       this.render();
     });
+
+    bus.on("viewmode:changed", () => {
+      if (spectrogramRenderer.viewMode !== "waveform") {
+        this.preloadSpectrograms();
+      }
+      this.render();
+    });
+
+    bus.on("colormap:changed", () => {
+      this.preloadSpectrograms();
+      this.render();
+    });
+
+    bus.on("pitch:toggled", (enabled) => {
+      if (enabled) {
+        this.preloadPitchData();
+      }
+      this.render();
+    });
+
+    bus.on("spectrogram:loaded", () => this.render());
+    bus.on("pitch:loaded", () => this.render());
 
     // Split request handler
     bus.on("clip:request-split", ({ trackId, clipId, splitTime }) => {
@@ -475,6 +504,28 @@ export class TimelineController {
     }
   }
 
+  async preloadSpectrograms() {
+    const { project } = store.getState();
+    if (!project || !project.tracks) return;
+
+    for (const track of project.tracks) {
+      for (const clip of track.clips) {
+        spectrogramRenderer.getSpectrogramImage(project.id, clip.source_id);
+      }
+    }
+  }
+
+  async preloadPitchData() {
+    const { project } = store.getState();
+    if (!project || !project.tracks) return;
+
+    for (const track of project.tracks) {
+      for (const clip of track.clips) {
+        spectrogramRenderer.getPitchData(project.id, clip.source_id);
+      }
+    }
+  }
+
   hitTestClipsDetailed(clickX, clickY) {
     const { project } = store.getState();
     if (!project || !project.tracks) return null;
@@ -537,7 +588,38 @@ export class TimelineController {
         track.clips.forEach((clip) => {
           const peaks = this.waveformCache.get(clip.source_id);
           const isSelected = clip.id === this.selectedClipId;
-          ClipView.drawClip(ctx, clip, track.color, peaks, trackY, clipAreaHeight, this.zoom, isSelected, isSelected ? this.hoverEdge : null);
+
+          const specKey = `${project.id}_${clip.source_id}_${spectrogramRenderer.colormap}`;
+          const spectrogramImg = spectrogramRenderer.spectrogramCache.get(specKey) || null;
+          const pitchData = spectrogramRenderer.pitchCache.get(clip.source_id) || null;
+
+          // If in spectrogram/split mode and not cached, initiate async fetch
+          if (spectrogramRenderer.viewMode !== "waveform" && !spectrogramImg) {
+            spectrogramRenderer.getSpectrogramImage(project.id, clip.source_id);
+          }
+
+          // If pitch contour is toggled and not cached, initiate async fetch
+          if (spectrogramRenderer.showPitch && !pitchData) {
+            spectrogramRenderer.getPitchData(project.id, clip.source_id);
+          }
+
+          ClipView.drawClip(
+            ctx,
+            clip,
+            track.color,
+            peaks,
+            trackY,
+            clipAreaHeight,
+            this.zoom,
+            isSelected,
+            isSelected ? this.hoverEdge : null,
+            {
+              viewMode: spectrogramRenderer.viewMode,
+              spectrogramImg,
+              pitchData,
+              showPitch: spectrogramRenderer.showPitch,
+            }
+          );
         });
 
         // If Automation Lane is Expanded, Draw Automation Curve & Points

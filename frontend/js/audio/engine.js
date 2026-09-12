@@ -4,6 +4,7 @@
 
 import { bus } from "../core/event-bus.js";
 import { createEffect } from "./effects.js";
+import { spatialEngine } from "./spatial.js";
 
 class AudioEngine {
   constructor() {
@@ -37,8 +38,12 @@ class AudioEngine {
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 1024;
 
+      // Initialize 8D Spatial Audio processor on Master bus
+      spatialEngine.init(this.ctx);
+
       this.masterBusInput.connect(this.masterGain);
-      this.masterGain.connect(this.analyser);
+      this.masterGain.connect(spatialEngine.inputNode);
+      spatialEngine.outputNode.connect(this.analyser);
       this.analyser.connect(this.ctx.destination);
 
       this.isInitialized = true;

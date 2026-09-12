@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.app.config import settings
 from backend.app.logging_config import logger
-from backend.app.api import system, projects, media, jobs, analysis, websocket, stems, time_pitch, export
+from backend.app.api import system, projects, media, jobs, analysis, websocket, stems, time_pitch, export, spectrogram, pitch
 
 
 @asynccontextmanager
@@ -71,6 +71,8 @@ app.include_router(analysis.router)
 app.include_router(stems.router)
 app.include_router(time_pitch.router)
 app.include_router(export.router)
+app.include_router(spectrogram.router)
+app.include_router(pitch.router)
 app.include_router(websocket.router)
 
 # Mount Frontend static files

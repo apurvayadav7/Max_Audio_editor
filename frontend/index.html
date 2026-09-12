@@ -74,6 +74,22 @@
           <button id="btn-zoom-in" class="btn" style="padding: 4px 8px; font-size: 11px;" title="Zoom In (Ctrl+Plus)">🔍 +</button>
         </div>
 
+        <div class="transport-group" style="gap: 4px; border-left: 1px solid var(--border-subtle); padding-left: 8px;">
+          <label style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600;">VIEW</label>
+          <div class="btn-group" style="display: flex; gap: 2px;">
+            <button id="btn-view-waveform" class="btn active" style="padding: 4px 7px; font-size: 11px;" title="Waveform Peak View">〰 Wave</button>
+            <button id="btn-view-spectrogram" class="btn" style="padding: 4px 7px; font-size: 11px;" title="High-Resolution Mel Spectrogram View">▦ Spec</button>
+            <button id="btn-view-split" class="btn" style="padding: 4px 7px; font-size: 11px;" title="Split View: Waveform & Spectrogram">⚏ Split</button>
+          </div>
+          <select id="select-spectrogram-palette" style="padding: 4px 6px; font-size: 10px; border-radius: 4px; background: var(--bg-primary); color: var(--accent-cyan); border: 1px solid var(--border-subtle); display: none;" title="Spectrogram Color Palette">
+            <option value="cyberpunk" selected>Cyberpunk Neon</option>
+            <option value="magma">Magma Heat</option>
+            <option value="viridis">Viridis Nature</option>
+          </select>
+          <button id="btn-toggle-pitch" class="btn" style="padding: 4px 7px; font-size: 11px;" title="Toggle Vocal Pitch Tracking Contour (f0 / Notes)">🎤 Pitch</button>
+          <button id="btn-toggle-8d" class="btn" style="padding: 4px 7px; font-size: 11px; border-color: var(--accent-magenta); color: var(--accent-magenta);" title="Quick Toggle 8D Binaural Audio">🎧 8D</button>
+        </div>
+
         <div class="slider-container" style="margin-left: 8px; border-left: 1px solid var(--border-subtle); padding-left: 8px;">
           <label style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600;">MASTER</label>
           <input type="range" id="slider-master-volume" min="-30" max="6" value="0" step="0.5" style="width: 80px;" title="Master Volume (-30dB to +6dB)">
@@ -121,6 +137,7 @@
           <button class="drawer-tab" data-target="panel-analysis">📊 Music Analysis</button>
           <button class="drawer-tab" data-target="panel-jobs">⏳ Active Jobs</button>
           <button class="drawer-tab" data-target="panel-export">💾 Master Export</button>
+          <button class="drawer-tab" data-target="panel-spatial">🎧 8D Spatial</button>
 
           <!-- Quick Resize / Collapse Controls -->
           <div class="drawer-tabs-right">
@@ -221,6 +238,9 @@
               <div id="export-status-container" style="min-height: 48px;"></div>
             </div>
           </div>
+
+          <!-- 8D Spatial Tab -->
+          <div id="panel-spatial" class="tab-panel" style="display: none;"></div>
         </div>
       </div>
     </main>
