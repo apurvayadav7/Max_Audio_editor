@@ -14,6 +14,10 @@ class Store {
     return this.state;
   }
 
+  get(key) {
+    return this.state[key];
+  }
+
   setState(updates) {
     const prevState = { ...this.state };
     this.state = { ...this.state, ...updates };

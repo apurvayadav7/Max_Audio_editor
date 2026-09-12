@@ -184,6 +184,44 @@ export class ClipInspectorPanel {
             <canvas id="inspector-piano-roll-canvas" width="860" height="64" style="width: 100%; height: 100%; display: block;"></canvas>
           </div>
         </div>
+
+        <!-- Audio Insight & Education Module -->
+        <div style="background: var(--bg-secondary); padding: 12px; border-radius: 6px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px;">🎙️</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">ACOUSTIC INSIGHT & EDUCATION</span>
+              <span class="badge" style="background: rgba(0, 240, 255, 0.15); color: var(--accent-cyan); font-size: 9px; font-weight: 700;">AI ADVISOR</span>
+            </div>
+            <button id="inspector-btn-explain" class="btn" style="padding: 4px 12px; font-size: 11px; font-weight: 600; background: rgba(0,240,255,0.12); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">
+              ⚡ Explain Stem Audio
+            </button>
+          </div>
+          <div id="inspector-explain-status" style="font-size: 10px; color: var(--text-muted);">
+            Analyze harmonic weight, dynamic punch, and spatial character in plain musical terms.
+          </div>
+          <div id="inspector-insight-details" style="display: none; flex-direction: column; gap: 6px; background: #0e1117; padding: 10px; border-radius: 4px; border: 1px solid var(--border-subtle); font-size: 11px;">
+            <div id="insight-summary" style="color: #fff; line-height: 1.4; font-weight: 500;"></div>
+            <div style="display: flex; gap: 14px; margin-top: 4px; font-size: 10px; color: var(--text-secondary);">
+              <span>Dominant Freq: <b id="insight-dom-freq" style="color: var(--accent-cyan);">--</b></span>
+              <span>Crest Factor: <b id="insight-crest" style="color: var(--accent-amber);">--</b></span>
+              <span>Stereo Corr: <b id="insight-corr" style="color: #00e676);">--</b></span>
+            </div>
+            <!-- Frequency Energy Bar -->
+            <div style="margin-top: 6px;">
+              <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); margin-bottom: 2px;">
+                <span>Sub-Bass: <b id="energy-sub">--%</b></span>
+                <span>Midrange: <b id="energy-mid">--%</b></span>
+                <span>Highs/Air: <b id="energy-high">--%</b></span>
+              </div>
+              <div style="display: flex; height: 5px; border-radius: 3px; overflow: hidden; background: #222;">
+                <div id="bar-sub" style="width: 33%; background: #ff007f;"></div>
+                <div id="bar-mid" style="width: 33%; background: #00f0ff;"></div>
+                <div id="bar-high" style="width: 34%; background: #00e676;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
@@ -318,6 +356,59 @@ export class ClipInspectorPanel {
         } finally {
           transcribeBtn.disabled = false;
           transcribeBtn.textContent = "⚡ Transcribe Notes";
+        }
+      };
+    }
+
+    // Explain Stem Audio Button
+    const explainBtn = document.getElementById("inspector-btn-explain");
+    const explainStatus = document.getElementById("inspector-explain-status");
+    const insightDetails = document.getElementById("inspector-insight-details");
+    const insightSummary = document.getElementById("insight-summary");
+    const domFreqLabel = document.getElementById("insight-dom-freq");
+    const crestLabel = document.getElementById("insight-crest");
+    const corrLabel = document.getElementById("insight-corr");
+    const subLabel = document.getElementById("energy-sub");
+    const midLabel = document.getElementById("energy-mid");
+    const highLabel = document.getElementById("energy-high");
+    const barSub = document.getElementById("bar-sub");
+    const barMid = document.getElementById("bar-mid");
+    const barHigh = document.getElementById("bar-high");
+
+    if (explainBtn) {
+      explainBtn.onclick = async () => {
+        const { project } = store.getState();
+        if (!project || !track) return;
+
+        explainBtn.disabled = true;
+        explainBtn.textContent = "Analyzing Stem...";
+        if (explainStatus) explainStatus.textContent = "Computing spectral centroid, crest factor, and stereo coherence...";
+
+        try {
+          const res = await api.request(`/api/projects/${project.id}/mix/explain/${track.id}`);
+          if (explainStatus) {
+            explainStatus.textContent = `Acoustic analysis complete for '${res.track_name}'.`;
+          }
+          if (insightDetails) {
+            insightDetails.style.display = "flex";
+            if (insightSummary) insightSummary.textContent = res.summary_text;
+            if (domFreqLabel) domFreqLabel.textContent = `${res.dominant_frequency_hz} Hz`;
+            if (crestLabel) crestLabel.textContent = `${res.crest_factor_db} dB`;
+            if (corrLabel) corrLabel.textContent = `${res.stereo_correlation > 0 ? "+" : ""}${res.stereo_correlation}`;
+            if (subLabel) subLabel.textContent = `${res.energy_sub_pct}%`;
+            if (midLabel) midLabel.textContent = `${res.energy_mid_pct}%`;
+            if (highLabel) highLabel.textContent = `${res.energy_high_pct}%`;
+
+            if (barSub) barSub.style.width = `${Math.max(2, res.energy_sub_pct)}%`;
+            if (barMid) barMid.style.width = `${Math.max(2, res.energy_mid_pct)}%`;
+            if (barHigh) barHigh.style.width = `${Math.max(2, res.energy_high_pct)}%`;
+          }
+        } catch (err) {
+          console.error("[Inspector] Explain audio error:", err);
+          if (explainStatus) explainStatus.textContent = `❌ Explanation failed: ${err.message}`;
+        } finally {
+          explainBtn.disabled = false;
+          explainBtn.textContent = "⚡ Explain Stem Audio";
         }
       };
     }
