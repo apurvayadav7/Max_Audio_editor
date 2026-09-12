@@ -23,6 +23,7 @@ import { exportPanel } from "./panels/export.js";
 import { spectrogramRenderer } from "./canvas/spectrogram.js";
 import { spatialEngine } from "./audio/spatial.js";
 import { spatialPanel } from "./panels/spatial-panel.js";
+import { aiPanel } from "./panels/ai.js";
 import {
   TrackMuteCommand,
   TrackSoloCommand,
@@ -49,6 +50,7 @@ class MaxAudioApp {
     stemModalUI.init();
     exportPanel.init();
     spatialPanel.init();
+    aiPanel.init();
     automationEngine.init();
     wsClient.connect();
     this.bindUIEvents();
