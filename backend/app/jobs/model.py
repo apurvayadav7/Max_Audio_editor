@@ -21,6 +21,7 @@ class JobType(str, Enum):
     EXPORT = "export"
     AI_TRANSCRIPTION = "ai_transcription"
     AI_ASSISTANT = "ai_assistant"
+    AI_GENERATION = "ai_generation"
 
 
 class Job(BaseModel):

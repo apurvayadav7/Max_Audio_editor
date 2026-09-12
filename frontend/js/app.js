@@ -17,6 +17,7 @@ import { effectsPanel } from "./panels/effects.js";
 import { jobsPanel } from "./panels/jobs.js";
 import { musicAnalysisPanel } from "./panels/analysis.js";
 import { stemModalUI } from "./panels/stems-modal.js";
+import { generationModalUI } from "./panels/generation-modal.js";
 import { wsClient } from "./api/websocket-client.js";
 import { automationEngine } from "./timeline/automation.js";
 import { exportPanel } from "./panels/export.js";
@@ -48,6 +49,7 @@ class MaxAudioApp {
     jobsPanel.init();
     musicAnalysisPanel.init();
     stemModalUI.init();
+    generationModalUI.init();
     exportPanel.init();
     spatialPanel.init();
     aiPanel.init();
